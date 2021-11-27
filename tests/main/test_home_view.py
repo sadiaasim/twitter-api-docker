@@ -10,5 +10,9 @@ class TestHomeView(TestCase):
     def test_home(self):
         response = self.client.get('/hello')
         text = response.data.decode()
+<<<<<<< HEAD
         print(text)
         self.assertIn('Goodbye', text)
+=======
+        self.assertIn("Goodbye", text)
+>>>>>>> origin/docker

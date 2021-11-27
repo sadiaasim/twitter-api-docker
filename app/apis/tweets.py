@@ -1,5 +1,10 @@
 from flask_restx import Namespace, Resource, fields
+<<<<<<< HEAD
 from app.db import tweet_repository
+=======
+from flask import abort
+from app import db
+>>>>>>> origin/docker
 from app.models import Tweet
 
 api = Namespace('tweets')  # Base route
@@ -18,14 +23,21 @@ json_new_tweet = api.model('New tweet', {
 @api.response(404, 'Tweet not found')
 @api.param('tweet_id', 'The tweet unique identifier')
 class TweetResource(Resource):
+<<<<<<< HEAD
     @api.marshal_with(json_tweet)  # Used to control JSON response format
     def get(self, tweet_id):  # GET method
         tweet = tweet_repository.get(tweet_id)
+=======
+    @api.marshal_with(json_tweet)
+    def get(self, id):
+        tweet = db.session.query(Tweet).get(id)
+>>>>>>> origin/docker
         if tweet is None:
             api.abort(404)  # abort will throw an exception and break execution flow (equivalent to 'return' keyword for an error)
         return tweet, 200
 
     @api.marshal_with(json_tweet, code=200)
+<<<<<<< HEAD
     @api.expect(json_new_tweet, validate=True)  # Used to control JSON body format (and validate)
     def patch(self, tweet_id):  # PATCH method
         tweet = tweet_repository.get(tweet_id)
@@ -44,12 +56,33 @@ class TweetResource(Resource):
             api.abort(404)
         tweet_repository.remove(tweet_id)
         return None, 204
+=======
+    @api.expect(json_new_tweet, validate=True)
+    def patch(self, id):
+        tweet = db.session.query(Tweet).get(id)
+        if tweet is None:
+            api.abort(404, "Tweet {} doesn't exist".format(id))
+        else:
+            tweet.text = api.payload["text"]
+            db.session.commit()
+            return tweet
+
+    def delete(self, id):
+        tweet = db.session.query(Tweet).get(id)
+        if tweet is None:
+            api.abort(404, "Tweet {} doesn't exist".format(id))
+        else:
+            db.session.delete(tweet)
+            db.session.commit()
+            return None
+>>>>>>> origin/docker
 
 @api.route('')  # empty route extension (ie: /tweets)
 @api.response(422, 'Invalid tweet')
 class TweetsResource(Resource):
     @api.marshal_with(json_tweet, code=201)
     @api.expect(json_new_tweet, validate=True)
+<<<<<<< HEAD
     def post(self):  # POST method
         # No need to verify if 'text' is present in body, or if it is a valid string since we use validate=True
         # body has already been validated using json_new_tweet schema
@@ -63,3 +96,18 @@ class TweetsResource(Resource):
     def get(self):  # GET method
         tweets = tweet_repository.get_all()
         return tweets, 200
+=======
+    def post(self):
+        text = api.payload["text"]
+        if len(text) > 0:
+            tweet = Tweet(text=text)
+            db.session.add(tweet)
+            db.session.commit()
+            return tweet, 201
+        else:
+            return abort(422, "Tweet text can't be empty")
+
+    @api.marshal_with(json_tweet)
+    def get(self):
+        return db.session.query(Tweet).all()
+>>>>>>> origin/docker

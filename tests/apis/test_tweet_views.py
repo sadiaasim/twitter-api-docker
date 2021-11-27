@@ -1,17 +1,24 @@
 from flask_testing import TestCase
-from app import create_app
+from app import create_app, db
 from app.models import Tweet
-from app.db import tweet_repository
+
 
 class TestTweetViews(TestCase):
+
     def create_app(self):
         app = create_app()
         app.config['TESTING'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = f"{app.config['SQLALCHEMY_DATABASE_URI']}_test"
         return app
 
     def setUp(self):
-        tweet_repository.clear() # Upgrade the TweetRepository.__clear() method to public!
+        db.create_all()
 
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+<<<<<<< HEAD
     def test_read_many_tweets(self):
         first_tweet = Tweet('First tweet')
         tweet_repository.add(first_tweet)
@@ -41,6 +48,17 @@ class TestTweetViews(TestCase):
         response = self.client.get('/tweets/1')
         response_tweet = response.json
         print(response_tweet)
+=======
+    def test_tweet_show(self):
+        first_tweet = Tweet(text="First tweet")
+        db.session.add(first_tweet)
+        db.session.commit()
+        response = self.client.get("/tweets/1")
+        response_tweet = response.json        
+        self.assertEqual(response_tweet["id"], 1)
+        self.assertEqual(response_tweet["text"], "First tweet")
+        self.assertIsNotNone(response_tweet["created_at"])
+>>>>>>> origin/docker
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response_tweet['id'], 1)
@@ -56,6 +74,7 @@ class TestTweetViews(TestCase):
         self.assertEqual(created_tweet['text'], 'New tweet!')
         self.assertIsNotNone(created_tweet['created_at'])
 
+<<<<<<< HEAD
     def test_update_one_tweet(self):
         tweet_to_update = Tweet('Tweet to update')
         tweet_repository.add(tweet_to_update)
@@ -79,3 +98,35 @@ class TestTweetViews(TestCase):
 
         # We use direct access to database to validate our operation
         self.assertIsNone(tweet_repository.get(1))
+=======
+    def test_tweet_update(self):
+        first_tweet = Tweet(text="First tweet")
+        db.session.add(first_tweet)
+        db.session.commit()
+        response = self.client.patch("/tweets/1", json={'text': 'New text'})
+        updated_tweet = response.json
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(updated_tweet["id"], 1)
+        self.assertEqual(updated_tweet["text"], "New text")
+
+    def test_tweet_delete(self):
+        first_tweet = Tweet(text="First tweet")
+        db.session.add(first_tweet)
+        db.session.commit()
+        self.client.delete("/tweets/1")
+        self.assertIsNone(db.session.query(Tweet).get(1))
+
+    def test_tweets_index_non_empty(self):
+        first_tweet = Tweet(text="First tweet")
+        second_tweet = Tweet(text="Second tweet")
+        db.session.add_all([first_tweet, second_tweet])
+        db.session.commit()
+        response = self.client.get("/tweets")
+        response_tweets = response.json
+        self.assertEqual(len(response_tweets), 2)
+
+    def test_tweets_index_empty(self):
+        response = self.client.get("/tweets")
+        response_tweets = response.json
+        self.assertEqual(response_tweets, [])
+>>>>>>> origin/docker
